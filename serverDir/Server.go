@@ -27,7 +27,7 @@ func Start(port int) *server {
 }
 
 
-
+//serves as a writer stream of bytes - can be used to make raw inputstream but following c style getchar()
 func (serv *server) Read_deprecated() []byte {
 	buffer:=make([]byte,1000)
 	i:=0
@@ -52,6 +52,7 @@ func (serv *server) Read_deprecated() []byte {
 
 }
 
+//functions as a readline using buffer delimter of \n
 func (serv *server) Read() []byte{
 	br:=bufio.NewReader(serv.connection)
 	result,_:=br.ReadString('\n')
