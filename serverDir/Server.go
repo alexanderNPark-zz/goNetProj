@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"bufio"
 	"syscall"
+	"strings"
 )
 
 type server struct{
@@ -59,10 +60,28 @@ func (serv *server) Read() []byte{
 	return []byte(result)[:len(result)-1]
 }
 
+
+
+
 func (serv *server) Write(data []byte){
-	new_data :=serv.connection.LocalAddr().String()+" says "+string(data)+"\n"
+	address,err:=net.LookupAddr(serv.connection.LocalAddr().String())
+	if(err!=nil){
+		fmt.Println(serv.connection.LocalAddr().String())
+	}
+	new_data :=strings.Join(address,";")+" says "+string(data)+"\n"
 	write:=bufio.NewWriter(serv.connection)
 	write.Write([]byte(new_data))
+	write.Flush()
+
+}
+
+func (serv *server) WriteDelim(data []byte,delim string){
+	delim_data:=[]byte(delim)
+	new_buf:=append(delim_data,data...)
+	new_buf=append(new_buf,delim_data...)
+
+	write:=bufio.NewWriter(serv.connection)
+	write.Write(new_buf)
 	write.Flush()
 
 }
