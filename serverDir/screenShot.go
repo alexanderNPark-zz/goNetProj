@@ -23,7 +23,7 @@ func ScreenRect() (image.Rectangle, error) {
 	//x:=GetSystemMetrics(SM_CXVIRTUALSCREEN)// same as using just HORZRES/VERTRES
 	//y:=GetSystemMetrics(SM_CYVIRTUALSCREEN)
 
-	fmt.Println(x,y)
+	//fmt.Println(x,y)
 	return image.Rect(0, 0, x, y), nil
 }
 

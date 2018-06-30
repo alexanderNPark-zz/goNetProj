@@ -1,5 +1,11 @@
 package serverDir
 
+import (
+	"os"
+	"fmt"
+	"bufio"
+)
+
 func empty() {
 
 }
@@ -73,3 +79,35 @@ The reason code will be DLL_PROCESS_ATTACH, since you are attaching to a process
 
 }
 */
+
+func testScreenShot(){
+
+	file,err:=os.Create("./sc.png")
+	if(err!=nil){
+		fmt.Println("failed")
+	}
+	b :=bufio.NewWriter(file)
+	PNGScreenShotToBytes(b)
+	b.Flush()
+
+
+	file.Close()
+
+}
+
+func start(){
+	server:=Start(2334)
+	for{
+		x:=server.Read()
+		content :=string(x)
+
+		if(content=="done"){
+			fmt.Println("Exitted")
+			server.Write([]byte("<exit>\n"))
+			break
+		}
+		fmt.Println("received "+content)
+		//server.WriteDelim([]byte("Beer "+content),"\n")
+		server.Write([]byte("rules"))
+	}
+}

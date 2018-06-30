@@ -1,0 +1,3 @@
+Compile your go using typical compile.bat which will make a .exe.
+Then using resource hacker open conhost.exe which is generated output of compile.bat.
+Choose action and add from resources your .res or .rc or .ico whichever. You can figure it out.

@@ -5,29 +5,99 @@ import (
 	"strconv"
 	"bufio"
 	"syscall"
-	"os"
-	"fmt"
+
 )
+
+
 
 type client struct{
 	port int
 	address string
 	connection net.Conn
-	endCommand string
+	br *bufio.Reader
+	pw *bufio.Writer
 }
 
-func StartClient(port int, address string,endComm string) *client{
+var br *bufio.Reader
+
+
+func StartClient(port int, address string) *client{
 	conn,error := net.Dial("tcp", address+":"+strconv.Itoa(port))
 	if(error!=nil){
 		return nil
 	}
+	initialize()
 
-	return &client{port,address,conn, endComm}
+	return &client{port,address,conn, bufio.NewReader(conn), bufio.NewWriter(conn)}
 }
 
 func (ct *client) Close(){
 	ct.connection.Close()
 }
+//Use of bufio.readline() because java puts \r\n which has carriage return that fucks comparison
+//so to input compatibility instead of writing raw bytes in java which is better but more work...
+func (clien *client) ReadLine_new() string{
+	content,_,err := clien.br.ReadLine()
+	if(err!=nil){
+		syscall.Exit(0)
+	}
+
+	return string(content)
+
+}
+
+func (clien *client) KeepReadingLinesUntilDelim(delim string) string{
+	var total string = ""
+
+	for newLine:=clien.ReadLine_new();newLine!=delim;newLine=clien.ReadLine_new(){
+		total+=newLine
+
+
+	}
+	return total
+}
+
+//a dangerous method
+func (clien *client) Write(data []byte){
+	clien.pw.Write(data)
+	clien.pw.Flush();
+}
+
+func (clien *client) WriteLine(data string){
+	write:=clien.pw
+	write.WriteString(data+"\n")
+	write.Flush()
+
+}
+
+func (clien *client) WriteLineWithDelim(data string, delim string){
+
+	clien.WriteLine(delim+"\n"+data+"\n"+delim)
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 func (clien *client) Read_deprecated() []byte {
 	buffer:=make([]byte,1000)
@@ -54,8 +124,10 @@ func (clien *client) Read_deprecated() []byte {
 }
 
 //functions as a readline using buffer delimter of \n
-func (clien *client) ReadLine() string{
-	br:=bufio.NewReader(clien.connection)
+func (clien *client) ReadLine_deprecated() string{
+	if(br==nil){
+		br=bufio.NewReader(clien.connection)
+	}
 	result,err:=br.ReadString('\n')
 	if(err!=nil){
 		syscall.Exit(0)
@@ -64,62 +136,18 @@ func (clien *client) ReadLine() string{
 
 }
 
-func (clien *client) ReadUntilDelimLine(delim string) string{
-	var total string
-	for newLine:=clien.ReadLine();newLine!=delim;newLine=clien.ReadLine(){
-		total+=newLine
-	}
-	if(clien.endCommand!="" && total==clien.endCommand){
-		fmt.Println("quit")
-		syscall.Exit(0)
-	}
-	return total
-}
 
 
-func (clien *client) WriteLine(data string){
-
-	write:=bufio.NewWriter(clien.connection)
-	write.WriteString(data+"\n")
-	write.Flush()
-
-}
-
-func (clien *client) WriteLineWithDelim(data string){
-
-	clien.WriteLine(data+"\n"+KNOWN_DELIM)
-
-}
-
-var KNOWN_DELIM = "<0/Exit0>"
-var in_use = make(chan string)
-
-func (clien *client) InitiateScrenShotSendingProcess(){
-	newPort,err:=strconv.Atoi(clien.ReadUntilDelimLine(KNOWN_DELIM))
-	if(err!=nil){
-		fmt.Println("Invalid Port")
-	}
-	imageClient:=StartClient(newPort,clien.address,"")
-	PNGScreenShotToBytes(imageClient.connection)
-	bufio.NewWriter(imageClient.connection).Flush()
-	imageClient.Close()
 
 
-}
 
-//write no delimiter, just raw data
-func (clien *client) Write(data []byte){
-	osstream:=bufio.NewWriter(clien.connection)
-	osstream.Write(data)
-	osstream.Flush()
-}
 
-func (clien *client) Ping(){
-	write:=bufio.NewWriter(clien.connection)
-	name,_:=os.Hostname()
-	write.Write([]byte(name+"</Ping>\n"))
-	write.WriteString(KNOWN_DELIM+"\n")
-	write.Flush()
-}
+
+
+
+
+
+
+
 
 
