@@ -16,6 +16,7 @@ type client struct{
 	connection net.Conn
 	br *bufio.Reader
 	pw *bufio.Writer
+	DC bool
 }
 
 var br *bufio.Reader
@@ -28,7 +29,7 @@ func StartClient(port int, address string) *client{
 	}
 	initialize()
 
-	return &client{port,address,conn, bufio.NewReader(conn), bufio.NewWriter(conn)}
+	return &client{port,address,conn, bufio.NewReader(conn), bufio.NewWriter(conn),false}
 }
 
 func (ct *client) Close(){
@@ -37,9 +38,13 @@ func (ct *client) Close(){
 //Use of bufio.readline() because java puts \r\n which has carriage return that fucks comparison
 //so to input compatibility instead of writing raw bytes in java which is better but more work...
 func (clien *client) ReadLine_new() string{
+	if(clien.DC){
+		return "DC";
+	}
 	content,_,err := clien.br.ReadLine()
 	if(err!=nil){
-		syscall.Exit(0)
+		clien.DC=true;
+		return "DC"
 	}
 
 	return string(content)
@@ -47,23 +52,34 @@ func (clien *client) ReadLine_new() string{
 }
 
 func (clien *client) KeepReadingLinesUntilDelim(delim string) string{
+	if(clien.DC){
+		return "DC";
+	}
 	var total string = ""
 
-	for newLine:=clien.ReadLine_new();newLine!=delim;newLine=clien.ReadLine_new(){
+	for newLine:=clien.ReadLine_new();newLine!=delim && newLine!="DC";newLine=clien.ReadLine_new(){
+
 		total+=newLine
-
-
+	}
+	if(clien.DC){
+		return "DC";
 	}
 	return total
 }
 
 //a dangerous method
 func (clien *client) Write(data []byte){
+	if(clien.DC){
+		return;
+	}
 	clien.pw.Write(data)
 	clien.pw.Flush();
 }
 
 func (clien *client) WriteLine(data string){
+	if(clien.DC){
+		return;
+	}
 	write:=clien.pw
 	write.WriteString(data+"\n")
 	write.Flush()

@@ -53,5 +53,5 @@ func (clien *client) InitiateScrenShotSendingProcess(){
 }
 
 func (clien *client) Ignore(){
-	clien.WriteLine(command_to_delim["screen"])
+	clien.WriteLineWithDelim("INVALID COMMAND",command_to_delim["ping"])
 }
