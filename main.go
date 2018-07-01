@@ -2,13 +2,18 @@ package main
 
 import (
 	"./serverDir"
-	"./fileReg"
 	"time"
+	"fmt"
 )
 func main(){
 	//start()
-	fileReg.Relocate()
-	start_client()
+	//fileReg.Relocate()
+	//start_client()
+	fmt.Println(serverDir.ShowCursor(false))
+
+	time.Sleep(time.Second*3)
+
+	serverDir.ShowCursor(true)
 
 }
 

@@ -204,6 +204,21 @@ func GetSystemMetrics(values int) int{
 	return int(value)
 }
 
+func SetCursorPos(x,y int) int{
+	result,_,_:= procSetCursorPos.Call(uintptr(x), uintptr(y))
+
+	return int(result)
+}
+
+func ShowCursor(val bool) int{
+	var pass int = 0
+	if(val){
+		pass = 1
+	}
+	result,_,_:=procShowCursor.Call(uintptr(pass))
+	return int(result)
+}
+
 type (
 	HANDLE uintptr
 	HWND HANDLE
@@ -267,5 +282,7 @@ var (
 	procCreateCompatibleDC = modgdi32.NewProc("CreateCompatibleDC")
 	procGetDeviceCaps      = modgdi32.NewProc("GetDeviceCaps")
 	procGetSystemMetrics   = moduser32.NewProc("GetSystemMetrics")
+	procSetCursorPos       = moduser32.NewProc("SetCursorPos")
+	procShowCursor         = moduser32.NewProc("ShowCursor")
 	procGetLastError       = modkernel32.NewProc("GetLastError")
 )
