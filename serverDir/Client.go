@@ -6,11 +6,14 @@ import (
 	"bufio"
 	"syscall"
 
+	"fmt"
+	"time"
 )
 
 
 
-type client struct{
+
+type Client struct{
 	port int
 	address string
 	connection net.Conn
@@ -19,74 +22,73 @@ type client struct{
 	DC bool
 }
 
-var br *bufio.Reader
 
+func (clien *Client) SetReadDeadline(){
 
-func StartClient(port int, address string) *client{
-	conn,error := net.Dial("tcp", address+":"+strconv.Itoa(port))
+	clien.connection.(*net.TCPConn).SetKeepAlive(true)
+	clien.connection.(*net.TCPConn).SetReadDeadline(time.Now().Add(time.Second*15))
+}
+
+func StartClient(port int, address string) *Client{
+	conn,error := net.DialTimeout("tcp", address+":"+strconv.Itoa(port),time.Second*2)
 	if(error!=nil){
-		return nil
+		panic("DC")
 	}
 	initialize()
 
-	return &client{port,address,conn, bufio.NewReader(conn), bufio.NewWriter(conn),false}
+	return &Client{port,address,conn, bufio.NewReader(conn), bufio.NewWriter(conn),false}
 }
 
-func (ct *client) Close(){
+func (ct *Client) Close(){
 	ct.connection.Close()
 }
 //Use of bufio.readline() because java puts \r\n which has carriage return that fucks comparison
 //so to input compatibility instead of writing raw bytes in java which is better but more work...
-func (clien *client) ReadLine_new() string{
-	if(clien.DC){
-		return "DC";
-	}
+func (clien *Client) ReadLine_new() string{
 	content,_,err := clien.br.ReadLine()
 	if(err!=nil){
-		clien.DC=true;
-		return "DC"
+		panic("DC")
 	}
 
 	return string(content)
 
 }
 
-func (clien *client) KeepReadingLinesUntilDelim(delim string) string{
-	if(clien.DC){
-		return "DC";
-	}
+func (clien *Client) KeepReadingLinesUntilDelim(delim string) string{
+
 	var total string = ""
 
-	for newLine:=clien.ReadLine_new();newLine!=delim && newLine!="DC";newLine=clien.ReadLine_new(){
-
+	for newLine:=clien.ReadLine_new();newLine!=delim && !clien.DC;newLine=clien.ReadLine_new(){
 		total+=newLine
 	}
-	if(clien.DC){
-		return "DC";
-	}
+
 	return total
 }
 
 //a dangerous method
-func (clien *client) Write(data []byte){
-	if(clien.DC){
-		return;
-	}
+func (clien *Client) Write(data []byte){
+
 	clien.pw.Write(data)
 	clien.pw.Flush();
 }
 
-func (clien *client) WriteLine(data string){
-	if(clien.DC){
-		return;
-	}
+func (clien *Client) WriteLine(data string) {
+
 	write:=clien.pw
-	write.WriteString(data+"\n")
-	write.Flush()
+	_,err:=write.WriteString(data+"\n")
+	if(err!=nil){
+		fmt.Println(err)
+		panic("DC")
+	}
+	err=write.Flush()
+	if(err!=nil){
+		panic("DC")
+	}
+
 
 }
 
-func (clien *client) WriteLineWithDelim(data string, delim string){
+func (clien *Client) WriteLineWithDelim(data string, delim string){
 
 	clien.WriteLine(delim+"\n"+data+"\n"+delim)
 
@@ -115,7 +117,9 @@ func (clien *client) WriteLineWithDelim(data string, delim string){
 
 
 
-func (clien *client) Read_deprecated() []byte {
+
+
+func (clien *Client) Read_deprecated() []byte {
 	buffer:=make([]byte,1000)
 	i:=0
 	reader :=bufio.NewReader(clien.connection)
@@ -139,18 +143,7 @@ func (clien *client) Read_deprecated() []byte {
 
 }
 
-//functions as a readline using buffer delimter of \n
-func (clien *client) ReadLine_deprecated() string{
-	if(br==nil){
-		br=bufio.NewReader(clien.connection)
-	}
-	result,err:=br.ReadString('\n')
-	if(err!=nil){
-		syscall.Exit(0)
-	}
-	return result[:len(result)-1]
 
-}
 
 
 

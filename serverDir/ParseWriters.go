@@ -19,13 +19,13 @@ func initialize(){
 
 }
 
-func (clien *client) Ping(){
+func (clien *Client) Ping(){
 	content,_:=os.Hostname()
 	clien.WriteLineWithDelim(content+" CONNECTED",command_to_delim["ping"])
 }
 
 
-func (clien *client) Ping_deprecated(){
+func (clien *Client) Ping_deprecated(){
 	write:=bufio.NewWriter(clien.connection)
 	name,_:=os.Hostname()
 	write.WriteString(KNOWN_DELIM+"\n")
@@ -34,7 +34,7 @@ func (clien *client) Ping_deprecated(){
 	write.Flush()
 }
 
-func (clien *client) InitiateScrenShotSendingProcess(){
+func (clien *Client) InitiateScrenShotSendingProcess(){
 	newPort,err:=strconv.Atoi(clien.KeepReadingLinesUntilDelim(KNOWN_DELIM))
 	if(err!=nil){
 		clien.WriteLineWithDelim("INVALID NUMBER",command_to_delim["ping"])
@@ -52,6 +52,11 @@ func (clien *client) InitiateScrenShotSendingProcess(){
 
 }
 
-func (clien *client) Ignore(){
+func (clien *Client) Ignore(){
 	clien.WriteLineWithDelim("INVALID COMMAND",command_to_delim["ping"])
 }
+
+func (clien *Client) Reboot(){
+	panic("DC")
+}
+
